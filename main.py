@@ -8,11 +8,8 @@ from torch.utils.data import Dataset
 from skimage import io
 from skimage.transform import resize
 import os
-from torch.utils.data import DataLoader
 from torch import nn
 import numpy as np
-from torchvision.transforms import ToTensor
-from matplotlib import pyplot as plt
 
 
 class Net(nn.Module):
@@ -39,7 +36,6 @@ class Net(nn.Module):
         x = torch.flatten(x)
         x = self.lin1(x)
         x = self.lin2(x)
-        x = self.relu(x)
         x = self.logsoftmax(x)
         return torch.exp(x)
 
