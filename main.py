@@ -27,7 +27,7 @@ class Net(nn.Module):
         self.lin1 = nn.Linear(2 * 2 * 20, 150)
         self.lin2 = nn.Linear(150, 2)
         self.relu = nn.ReLU()
-        self.logsoftmax = nn.LogSoftmax(dim=1)
+        self.logsoftmax = nn.LogSoftmax(dim=0)
 
     def forward(self, x):
         x = self.c1(x)
@@ -36,13 +36,16 @@ class Net(nn.Module):
         x = self.c2(x)
         x = self.r2(x)
         x = self.maxpool2(x)
-        x = x.flatten(1)
+        x = torch.flatten(x)
         x = self.lin1(x)
         x = self.lin2(x)
         x = self.relu(x)
         x = self.logsoftmax(x)
         return torch.exp(x)
 
+
+model = Net()
+model.load_state_dict(torch.load('finalmodel.pt'))
 
 app = Flask(__name__)
 
@@ -56,13 +59,23 @@ def main():
         f = request.files['file']
         f.save(os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(f.filename)))
 
-        model = Net()
-
         image = io.imread(os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(f.filename)))
-        resize(image, (50, 50))
-        torchvision.transforms.ToTensor(image)
+        image = resize(image, (50, 50))
 
-        return redirect(url_for('negative'))
+        tensorize = torchvision.transforms.ToTensor()
+        image = tensorize(image)
+        image = torch.from_numpy(np.asarray(image)).float()
+
+        yhat = model(image)
+        print(yhat)
+        _, label = torch.max(yhat, 0)
+        print(label)
+
+        if label == 0:
+            return redirect(url_for('negative'))
+        elif label == 1:
+            return redirect(url_for('positive'))
+
     else:
         return flask.render_template('index.html')
 
