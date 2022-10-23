@@ -10,6 +10,7 @@ from skimage.transform import resize
 import os
 from torch import nn
 import numpy as np
+import cv2
 
 
 class Net(nn.Module):
@@ -55,22 +56,24 @@ def main():
         f = request.files['file']
         f.save(os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(f.filename)))
 
-        image = io.imread(os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(f.filename)))
-        image = resize(image, (50, 50))
+        image = cv2.imread(os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(f.filename)))
 
-        tensorize = torchvision.transforms.ToTensor()
-        image = tensorize(image)
-        image = torch.from_numpy(np.asarray(image)).float()
+        for r in range(0, image.shape[0], 30):
+            for c in range(0, image.shape[1], 30):
+                cv2.imwrite(f"img{r}_{c}.png", image[r:r + 30, c:c + 30, :])
 
-        yhat = model(image)
-        print(yhat)
-        _, label = torch.max(yhat, 0)
-        print(label)
+        #tensorize = torchvision.transforms.ToTensor()
+        #image = tensorize(image)
 
-        if label == 0:
+        #yhat = model(image)
+        #print(yhat)
+        #_, label = torch.max(yhat, 0)
+        #print(label)
+
+        #if label == 0:
             return redirect(url_for('negative'))
-        elif label == 1:
-            return redirect(url_for('positive'))
+        #lif label == 1:
+            #return redirect(url_for('positive'))
 
     else:
         return flask.render_template('index.html')
